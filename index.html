@@ -107,4 +107,26 @@ if(title==='Dozy Town'&&!ui.querySelector('.dashboard-hero')){ui.querySelector('
 ui.querySelectorAll('.town-scene').forEach(el=>{if(!el.querySelector('.rich-world'))el.insertAdjacentHTML('afterbegin',world())});ui.querySelectorAll('.garden-scene').forEach(el=>{if(!el.querySelector('.rich-world'))el.insertAdjacentHTML('afterbegin',world(true))});ui.querySelectorAll('.buddy-avatar').forEach(el=>{if(!el.querySelector('svg'))el.innerHTML=mascot});ui.querySelectorAll('.goal-owl').forEach(el=>{if(!el.querySelector('svg'))el.innerHTML=mascot});ui.querySelectorAll('.library-card').forEach((el,i)=>{if(!el.querySelector('.knowledge-art'))el.insertAdjacentHTML('afterbegin','<div class="knowledge-art '+['moon','sun','tea'][i]+'">'+['☾','☀','☕'][i]+'</div>')});
 }polish();new MutationObserver(polish).observe(screen,{childList:true,subtree:true});
 })();
+;(()=>{
+  const map={6:4,7:5,8:6,9:7};
+  const renumber=n=>n.replace(/^\d+/,v=>map[v]||v);
+  const headings=[...document.querySelectorAll('main h2[data-section-number],main h3[data-section-number]')].filter(h=>h.dataset.indexable==='true');
+  const idMap=new Map();
+  headings.forEach(h=>{const old=h.dataset.sectionNumber,n=renumber(old);const id='section-'+n.replaceAll('.','-');idMap.set(h.id,id);h.id=id;h.dataset.sectionNumber=n;for(const node of h.childNodes)if(node.nodeType===3&&/^\s*\d/.test(node.textContent)){node.textContent=node.textContent.replace(/^\s*\d+(?:\s*\.\s*\d+)*/,n);break;}});
+  document.querySelectorAll('a[href^="#section-"]').forEach(a=>{const old=a.getAttribute('href').slice(1);if(idMap.has(old))a.setAttribute('href','#'+idMap.get(old));});
+  const groups=[...document.querySelectorAll('.chapter-book')];
+  groups.forEach(book=>{const number=book.querySelector('.chapter-number'),old=number.textContent;number.textContent=map[old]||old;const open=book.querySelector('.chapter-open');open.textContent='Read Section '+number.textContent+' →';book.querySelectorAll('.chapter-link strong').forEach(s=>s.textContent=s.textContent.replace(/^\s*\d+(?:\s*\.\s*\d+)*/,n=>renumber(n.replace(/\s/g,''))));});
+  const parents=[['3','Research and current solutions','section-3-1'],['4','Dozy Town: Proposed Solution','section-4-1'],['4.3','Application Features','section-4-3-1'],['6','Discussion','section-6-1'],['7','Conclusion and Contribution Log','section-7-1']];
+  parents.forEach(([n,label,before])=>{const first=document.getElementById(before);if(!first||document.getElementById('section-'+n.replaceAll('.','-')))return;const h=document.createElement(n.includes('.')?'h3':'h2');h.id='section-'+n.replaceAll('.','-');h.textContent=n+'. '+label;first.before(h);if(!n.includes('.')){const book=groups.find(b=>b.querySelector('.chapter-number').textContent===n);if(book)book.querySelector('.chapter-open').href='#'+h.id;}});
+  // Keep section references consistent without changing table, figure or citation numbers.
+  const re=/\b(Sections?\s+)(\d+(?:\.\d+)*(?:\s*(?:,\s*and\s+|,\s*|and\s+|&\s*)\d+(?:\.\d+)*)*)/g;
+  const textWalker=document.createTreeWalker(document.querySelector('main'),NodeFilter.SHOW_TEXT);const texts=[];let node;while(node=textWalker.nextNode())if(!node.parentElement.closest('script,style,.prototype,.report-launchpad,h1,h2,h3'))texts.push(node);
+  texts.forEach(node=>{node.textContent=node.textContent.replace(re,(all,prefix,nums)=>prefix+nums.replace(/\d+(?:\.\d+)*/g,renumber));if(node.parentElement.closest('td')&&/^\s*6\.3\./.test(node.textContent))node.textContent=node.textContent.replace(/^\s*6\.3\./,'4.3.');});
+  document.getElementById('section-4-3').textContent='4.3 Application Features';
+  const featureLink=document.createElement('a');featureLink.className='chapter-link';featureLink.href='#section-4-3';featureLink.textContent='4.3 Application Features';const firstFeature=document.querySelector('.chapter-link[href="#section-4-3-1"]');firstFeature?.before(featureLink);
+  document.querySelectorAll('td').forEach(cell=>{for(const node of cell.childNodes)if(node.nodeType===3)node.textContent=node.textContent.replace('(6.1, 6.2)','(4.1, 4.2)');});
+  const log=document.getElementById('section-7-2');let table=log?.nextElementSibling;while(table&&table.tagName!=='TABLE')table=table.nextElementSibling;
+  if(table){table.querySelectorAll('td strong,td b').forEach(b=>b.replaceWith(document.createTextNode(b.textContent)));table.classList.add('contribution-log');}
+  if(idMap.has(location.hash.slice(1))){history.replaceState(null,'','#'+idMap.get(location.hash.slice(1)));}
+})();
 </script></body></html>

@@ -357,4 +357,22 @@ diorama.addEventListener('click',event=>{if(!event.target.closest('.dream-moon')
 diorama.style.cursor='pointer';
 hero.querySelector('.dream-moon').onclick=()=>{const on=hero.classList.toggle('moonlit');const moon=hero.querySelector('.dream-moon');moon.setAttribute('aria-pressed',String(on));moon.setAttribute('aria-label',on?'Switch the header to pastel daylight':'Switch the header to moonlight');hero.querySelector('.dream-bubble').textContent=on?'The stars are out. Come play!':'Psst… tap me to explore!'};
 })();
+// Restore first subsections that an earlier layout pass leaves as text nodes.
+(()=>{
+  for(const chapter of document.querySelectorAll('main > h2[id^="section-"]')){
+    const number=chapter.id.match(/^section-(\d+)$/)?.[1];
+    const label=chapter.nextSibling;
+    if(!number||label?.nodeType!==Node.TEXT_NODE)continue;
+    const title=label.textContent.trim();
+    if(!title.startsWith(number+'.1 '))continue;
+    const heading=document.createElement('h3');
+    heading.id='section-'+number+'-1';
+    heading.className='principle-subhead';
+    heading.dataset.sectionNumber=number+'.1';
+    heading.dataset.indexable='true';
+    heading.textContent=title;
+    label.replaceWith(heading);
+  }
+  if(/^#section-\d+-1$/.test(location.hash))requestAnimationFrame(()=>document.querySelector(location.hash)?.scrollIntoView({block:'start'}));
+})();
 </script></body></html>

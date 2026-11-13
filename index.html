@@ -333,15 +333,27 @@ const style=document.createElement('style');style.textContent=`
 @keyframes hello-dozy{0%,70%,100%{transform:rotate(0)}78%{transform:rotate(-5deg) translateY(-3px)}86%{transform:rotate(4deg)}}@keyframes moon-bob{50%{transform:translateY(-5px) rotate(5deg)}}@keyframes cloud-drift{to{transform:translateX(10px)}}@keyframes soft-twinkle{to{opacity:.35}}@media(max-width:650px){.dream-hero{padding:30px 25px;grid-template-columns:1fr;gap:6px}.dream-hero h1{font-size:50px!important}.dream-tagline br{display:none}.dream-copy{padding:3px 0}.dream-diorama{max-width:300px;justify-self:center}.dream-footnote{margin-top:14px}.dream-welcome{margin-top:17px!important}}@media(prefers-reduced-motion:reduce){.dream-hero *{animation:none!important;transition:none!important}}
 `;document.head.append(style);
 const diorama=hero.querySelector('.dream-diorama');
+let jumpFrame;
 const openPrototype=()=>{
   const phone=document.getElementById('phone-prototype');
   if(!phone)return;
+  cancelAnimationFrame(jumpFrame);
   history.replaceState(null,'','#phone-prototype');
-  phone.scrollIntoView({behavior:'instant',block:'start'});
-  requestAnimationFrame(()=>phone.scrollIntoView({behavior:'instant',block:'start'}));
+  const destination=()=>scrollY+phone.getBoundingClientRect().top;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){scrollTo({top:destination(),behavior:'instant'});return}
+  const from=scrollY;
+  let started;
+  const animate=now=>{
+    if(started===undefined)started=now;
+    const progress=Math.min((now-started)/900,1);
+    const eased=progress<.5?4*progress**3:1-(-2*progress+2)**3/2;
+    scrollTo({top:from+(destination()-from)*eased,behavior:'instant'});
+    if(progress<1)jumpFrame=requestAnimationFrame(animate);
+    else scrollTo({top:destination(),behavior:'instant'});
+  };
+  jumpFrame=requestAnimationFrame(animate);
 };
 diorama.addEventListener('click',event=>{if(!event.target.closest('.dream-moon'))openPrototype()});
-hero.querySelector('.dream-dozy').onclick=openPrototype;
 diorama.style.cursor='pointer';
 hero.querySelector('.dream-moon').onclick=()=>{const on=hero.classList.toggle('moonlit');const moon=hero.querySelector('.dream-moon');moon.setAttribute('aria-pressed',String(on));moon.setAttribute('aria-label',on?'Switch the header to pastel daylight':'Switch the header to moonlight');hero.querySelector('.dream-bubble').textContent=on?'The stars are out. Come play!':'Psst… tap me to explore!'};
 })();
